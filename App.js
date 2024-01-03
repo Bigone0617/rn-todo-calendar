@@ -16,6 +16,7 @@ import Margin from "./src/Margin";
 import { runPracticeDayjs } from "./src/practice-dayjs";
 import { getCalendarColumns, getDayColor, getDayText } from "./src/util";
 import { useCalendar } from "./src/hook/use-calendar";
+import { useTodoList } from "./src/hook/use-todo-list";
 
 const columnSize = 35;
 const Column = ({ text, color, opacity, disabled, onPress, isSelected }) => {
@@ -59,6 +60,7 @@ export default function App() {
     subtract1Month,
     add1Month,
   } = useCalendar(now);
+  const {} = useTodoList(selectedDate);
 
   const columns = getCalendarColumns(selectedDate);
 
