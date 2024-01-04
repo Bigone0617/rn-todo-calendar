@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import {
+  Alert,
   FlatList,
   Image,
   Keyboard,
@@ -14,7 +15,6 @@ import {
 import dayjs from "dayjs";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { Ionicons } from "@expo/vector-icons";
-
 import { runPracticeDayjs } from "./src/practice-dayjs";
 import { getCalendarColumns, ITEM_WIDTH, statusBarHeight } from "./src/util";
 import { useCalendar } from "./src/hook/use-calendar";
@@ -23,7 +23,6 @@ import Calendar from "./src/Calendar";
 import Margin from "./src/Margin";
 import AddTodoInput from "./src/AddTodoInput";
 import { bottomSpace } from "./src/util";
-
 export default function App() {
   const now = dayjs();
   const {
@@ -36,15 +35,24 @@ export default function App() {
     subtract1Month,
     add1Month,
   } = useCalendar(now);
-  const { todoList, input, setInput } = useTodoList(selectedDate);
+  const {
+    filteredTodoList,
+    input,
+    setInput,
+    toggleTodo,
+    removeTodo,
+    addTodo,
+    resetInput,
+  } = useTodoList(selectedDate);
 
   const columns = getCalendarColumns(selectedDate);
+
+  const flatListRef = useRef(null);
 
   const onPressLeftArrow = subtract1Month;
   const onPressHeaderDate = showDatePicker;
   const onPressRightArrow = add1Month;
   const onPressDate = setSelectedDate;
-
   const ListHeaderComponent = () => (
     <View>
       <Calendar
@@ -56,7 +64,6 @@ export default function App() {
         onPressDate={onPressDate}
       />
       <Margin height={15} />
-
       <View
         style={{
           width: 4,
@@ -71,8 +78,23 @@ export default function App() {
   );
   const renderItem = ({ item: todo }) => {
     const isSuccess = todo.isSuccess;
+    const onPress = () => toggleTodo(todo.id);
+    const onLongPress = () => {
+      Alert.alert("삭제하시겠어요?", "", [
+        {
+          style: "cancel",
+          text: "아니요",
+        },
+        {
+          text: "네",
+          onPress: () => removeTodo(todo.id),
+        },
+      ]);
+    };
     return (
-      <View
+      <Pressable
+        onPress={onPress}
+        onLongPress={onLongPress}
         style={{
           flexDirection: "row",
           width: ITEM_WIDTH,
@@ -87,21 +109,36 @@ export default function App() {
         <Text style={{ flex: 1, fontSize: 14, color: "#595959" }}>
           {todo.content}
         </Text>
-
         <Ionicons
           name="ios-checkmark"
           size={17}
           color={isSuccess ? "#595959" : "#bfbfbf"}
         />
-      </View>
+      </Pressable>
     );
   };
-  const onPressAdd = () => {};
+  const scrollToEnd = () => {
+    setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 300);
+  };
+  const onPressAdd = () => {
+    addTodo();
+    resetInput();
+    scrollToEnd();
+  };
+  const onSubmitEditing = () => {
+    addTodo();
+    resetInput();
+    scrollToEnd();
+  };
+  const onFocus = () => {
+    scrollToEnd();
+  };
 
   useEffect(() => {
     runPracticeDayjs();
   }, []);
-
   return (
     <Pressable
       style={styles.container}
@@ -125,12 +162,17 @@ export default function App() {
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <View>
+        <>
           <FlatList
-            data={todoList}
-            contentContainerStyle={{ paddingTop: statusBarHeight }}
+            ref={flatListRef}
+            data={filteredTodoList}
+            style={{ flex: 1 }}
+            contentContainerStyle={{
+              paddingTop: statusBarHeight + 30,
+            }}
             ListHeaderComponent={ListHeaderComponent}
             renderItem={renderItem}
+            showsVerticalScrollIndicator={false}
           />
 
           <AddTodoInput
@@ -138,12 +180,13 @@ export default function App() {
             onChangeText={setInput}
             placeholder={`${dayjs(selectedDate).format("MM.D")}에 추가할 투두`}
             onPressAdd={onPressAdd}
+            onSubmitEditing={onSubmitEditing}
+            onFocus={onFocus}
           />
-        </View>
+        </>
       </KeyboardAvoidingView>
 
       <Margin height={bottomSpace} />
-
       <DateTimePickerModal
         isVisible={isDatePickerVisible}
         mode="date"
@@ -153,7 +196,6 @@ export default function App() {
     </Pressable>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
