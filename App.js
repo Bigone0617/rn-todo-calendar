@@ -138,9 +138,6 @@ export default function App() {
     scrollToEnd();
   };
 
-  useEffect(() => {
-    runPracticeDayjs();
-  }, []);
   return (
     <Pressable
       style={styles.container}
@@ -165,17 +162,23 @@ export default function App() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <>
-          <FlatList
-            ref={flatListRef}
-            data={filteredTodoList}
-            style={{ flex: 1 }}
-            contentContainerStyle={{
-              paddingTop: statusBarHeight + 30,
-            }}
-            ListHeaderComponent={ListHeaderComponent}
-            renderItem={renderItem}
-            showsVerticalScrollIndicator={false}
-          />
+          {filteredTodoList.length > 0 ? (
+            <FlatList
+              ref={flatListRef}
+              data={filteredTodoList}
+              style={{ flex: 1 }}
+              contentContainerStyle={{
+                paddingTop: statusBarHeight + 30,
+              }}
+              ListHeaderComponent={ListHeaderComponent}
+              renderItem={renderItem}
+              showsVerticalScrollIndicator={false}
+            />
+          ) : (
+            <View>
+              <Text>로딩중...</Text>
+            </View>
+          )}
 
           <AddTodoInput
             value={input}
